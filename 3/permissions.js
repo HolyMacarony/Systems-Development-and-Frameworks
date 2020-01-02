@@ -6,7 +6,11 @@ const secret = require('./secret.js');
 const isAuthenticated = rule()(async (parent, args, ctx, info) => {
   var valid = false;
   try{
-	  var payload = jwt.verify(ctx.token, secret);
+	  let token = ctx.token
+	  if(token && token.startsWith('Bearer ')){
+		  token = token.slice(7, token.length).trimLeft();
+	  }
+	  var payload = jwt.verify(token, secret);
 	  valid = payload != null;
   }
   catch(err){
@@ -17,10 +21,10 @@ const isAuthenticated = rule()(async (parent, args, ctx, info) => {
 
 const permissions = shield({
   Mutation: {
-	createTodo: isAuthenticated,
-	updateTodo: isAuthenticated,
-	deleteTodo: isAuthenticated,
-	updateAssignee: isAuthenticated
+	createPet: isAuthenticated,
+	updatePet: isAuthenticated,
+	deletePet: isAuthenticated,
+	updateOwner: isAuthenticated
   },
 })
 

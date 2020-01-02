@@ -9,9 +9,9 @@ const factory = () => {
 describe('List', () => {
 	const wrapper = factory();
 
-	it('Renders a add todo button', () => {
+	it('Renders a add pet button', () => {
 		const addButton = wrapper.find(".add-button");
-		expect(addButton.text()).toBe("Add todo");
+		expect(addButton.text()).toBe("Add pet");
 	})
 
 	it('Renders the correct number of list items', () => {
@@ -19,7 +19,7 @@ describe('List', () => {
 		expect(listItems.length).toBe(3);
 	})
 
-	it('Add a todo after add button was clicked', () => {
+	it('Add a pet after add button was clicked', () => {
 		const addButton = wrapper.findAll(".add-button");
 		addButton.trigger("click");
 		const listItems = wrapper.findAll(ListItem);

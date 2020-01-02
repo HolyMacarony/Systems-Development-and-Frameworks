@@ -2,9 +2,12 @@ const getSchema = require("./apollo.js");
 const {ApolloServer} = require('apollo-server');
 const permissions = require('./permissions.js');
 const { applyMiddleware } = require('graphql-middleware');
-const getNeo4jDriver = require("./neo4j.js");
+const {getNeo4jDriver} = require("./neo4j.js");
+const {importDataToNeo4j, cleanUpDataInNeo4j} = require('./mockData.js');
 
-function getApolloServer(){
+async function getApolloServer(){
+	await cleanUpDataInNeo4j();
+	await importDataToNeo4j();
 	let schema = getSchema();
 	const schemaWithMiddleware = applyMiddleware(schema, permissions);
 	const server = new ApolloServer(

@@ -1,7 +1,8 @@
 const { createTestClient } = require('apollo-server-testing');
 const {gql} = require('apollo-server');
 const {getTestApolloServer} = require('./apolloServer.js');
-const {importDataToNeo4j, cleanUpDataInNeo4j, closeDriver} = require('./mockData.js');
+const {importDataToNeo4j, cleanUpDataInNeo4j} = require('./mockData.js');
+const {closeDriver} = require("./neo4j.js");
 
 const server = getTestApolloServer();
 const initClient = createTestClient(server);
@@ -12,64 +13,78 @@ const loginMutation = gql`
 	}
 `;
 
-const createTodoMutation = gql`
-	mutation createTodo($message: String, $assignee: ID!){
-		createTodo(message: $message, assignee: $assignee){
-			message
-			assignee{
+const createPetMutation = gql`
+	mutation createPet($name: String, $owner: ID!){
+		createPet(name: $name, owner: $owner){
+			name
+			owner{
 				name
 			}
 		}
 	}
 `;
 
-const createAssigneeMutation = gql`
-	mutation createAssignee($name: String!, $password: String!){
-		createAssignee(name: $name, password: $password){
+const createOwnerMutation = gql`
+	mutation createOwner($name: String!, $password: String!){
+		createOwner(name: $name, password: $password){
 			name
 		}
 	}
 `;
 
-const updateTodoMutation = gql`
-	mutation updateTodo($id: ID!, $message: String){
-		updateTodo(id:$id, message:$message){
+const updatePetMutation = gql`
+	mutation updatePet($id: ID!, $name: String){
+		updatePet(id:$id, name:$name){
 			id
-			message
+			name
 		}
 	}
 `;
 
-const getTodoQuery = gql`
-	query getTodo($id: ID!){
-		todo(id: $id){
+const getPetQuery = gql`
+	query getPet($id: ID!){
+		pet(id: $id){
 			id
-			message
+			name
 		}
 	}
 `;
 
-const deleteTodoMutation = gql`
-	mutation deleteTodo($id: ID!){
-		deleteTodo(id: $id){
+const deletePetMutation = gql`
+	mutation deletePet($id: ID!){
+		deletePet(id: $id){
 			id
-			message
+			name
 		}
 	}
 `;
 
 	
-const todosQuery = gql`
-	query TodosQuery($assignee: ID, $first: Int, $offset: Int){
-		todos(assignee: $assignee, first: $first, offset: $offset){
+const petsQuery = gql`
+	query PetsQuery($owner: ID, $first: Int, $offset: Int){
+		pets(owner: $owner, first: $first, offset: $offset){
 			id
-			message
-			assignee{
+			name
+			owner{
 				name
 			}
 		}
 	}
 `;
+
+const ownersQuery = gql`
+	query{
+		owners{
+			id
+			name
+		}
+	}
+`
+
+
+beforeAll(async()=>{
+	await cleanUpDataInNeo4j()
+})
 
 afterAll(async()=>{
 	await closeDriver()
@@ -95,76 +110,76 @@ describe('User is logged in', ()=>{
 		await cleanUpDataInNeo4j()
 	})
 	
-	it('creates a new todo', async ()=>{	
+	it('creates a new pet', async ()=>{	
 		const result = await mutate({
-				mutation: createTodoMutation,
-				variables: {message: "The new message", assignee: '1'}
+				mutation: createPetMutation,
+				variables: {name: "The new name", owner: '1'}
 		});
 		console.log(result);
 		expect(result.data).toMatchObject({
-			"createTodo":{
-				message: "The new message",
-				assignee: {
+			"createPet":{
+				name: "The new name",
+				owner: {
 					name: "Hans"
 				}
 			}
 		});
 	});
 
-	it('updates a todo', async ()=>{
+	it('updates a pet', async ()=>{
 		const result = await mutate(
 		{
-			mutation: updateTodoMutation,
-			variables: {id: "2", message: "color me surprised"}
+			mutation: updatePetMutation,
+			variables: {id: "2", name: "color me surprised"}
 		}
 		);
 		console.log(result);
 		expect(result.data).toMatchObject({
-			updateTodo:
+			updatePet:
 			{
 				id: "2",
-				message: "color me surprised"
+				name: "color me surprised"
 			}
 		});
 	})
 	
-	it('deletes a todo', async () => {
+	it('deletes a pet', async () => {
 		const queryResult = await query({
-			query: todosQuery,
+			query: petsQuery,
 			variables: {
 				first: 10,
 				offset: 0
 			}
 		});
 		
-		let expectedTodo = queryResult.data.todos[queryResult.data.todos.length -1];
+		let expectedPet = queryResult.data.pets[queryResult.data.pets.length -1];
 		
 		const result = await mutate({
-			mutation: deleteTodoMutation,
-			variables: {id: expectedTodo.id}
+			mutation: deletePetMutation,
+			variables: {id: expectedPet.id}
 		});
 		
 		const emptyResult = await query(
 		{
-			query: getTodoQuery,
-			variables: {id: expectedTodo.id}
+			query: getPetQuery,
+			variables: {id: expectedPet.id}
 		}
 		);
 		
 		console.log(result);
-		console.log(expectedTodo);
-		expect(result.data.deleteTodo.id).toBe(expectedTodo.id);
-		expect(emptyResult.data.todo).toBeFalsy;
+		console.log(expectedPet);
+		expect(result.data.deletePet.id).toBe(expectedPet.id);
+		expect(emptyResult.data.pet).toBeFalsy;
 	})
 
-	it('adds an assignee', async ()=>{
+	it('adds an owner', async ()=>{
 		const result = await mutate({
-			mutation: createAssigneeMutation,
+			mutation: createOwnerMutation,
 			variables: {name: "Helga", password: "1337"}
 		});
 		console.log(result);
 		expect(result.data).toMatchObject({
-			createAssignee:{
+			createOwner:{
 				name: "Helga"
 			}
 		});
@@ -186,54 +201,63 @@ describe('User is not logged in', ()=>{
 		await cleanUpDataInNeo4j()
 	})
 	
-	it('gets all todos', async ()=>{
+	it('gets all pets', async ()=>{
 		const result = await query({
-			query: todosQuery,
+			query: petsQuery,
 			variables: {
 				first: 10,
 				offset: 0
 			}
 		});
-		expect(result.data.todos.length).toBe(4);
+		expect(result.data.pets.length).toBe(4);
 	});
 	
-	it('gets all todos with pagination', async ()=>{
+	it('gets all pets with pagination', async ()=>{
 		const result = await query({
-			query: todosQuery,
+			query: petsQuery,
 			variables: {
 				first: 2,
 				offset: 1
 			}
 		});
-		expect(result.data.todos.length).toBe(2);
+		expect(result.data.pets.length).toBe(2);
 	});
 
-	it('gets a single todo', async ()=>{
+	it('gets a single pet', async ()=>{
 		const result = await query(
 		{
-			query: getTodoQuery,
+			query: getPetQuery,
 			variables: {id: "2"}
 		}
 		);
-		expect(result.data.todo.message).toBe("Bar");
+		expect(result.data.pet.name).toBe("Bar");
 	})
 	
-	it('gets all todos with assignee 1', async ()=>{
+	it('gets all pets with owner 1', async ()=>{
 		const result = await query({
-			query: todosQuery,
+			query: petsQuery,
 			variables: {
-				assignee: "1",
+				owner: "1",
 				first: 10,
 				offset: 0
 			}
 		});
-		expect(result.data.todos.length).toBe(2);
+		expect(result.data.pets.length).toBe(2);
 	});
+
+	it('gets all possible owners', async ()=>{
+		const result = await query({
+			query: ownersQuery
+		})
+
+		expect(result.data.owners.length).toBe(3)
+		expect(result.data.owners.map((owner)=>owner.name)).toContain('Hanna')
+	})
 	
-	it('cannot create a new todo', async ()=>{	
+	it('cannot create a new pet', async ()=>{	
 		const result = await mutate({
-				mutation: createTodoMutation,
-				variables: {message: "The new message", assignee: '1'}
+				mutation: createPetMutation,
+				variables: {name: "The new name", owner: '1'}
 		});
 		//console.log(result);
 		expect(result.error).not.toBe(null);

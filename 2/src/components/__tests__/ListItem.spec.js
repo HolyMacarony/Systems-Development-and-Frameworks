@@ -8,9 +8,9 @@ const factory = (values = {}) => {
 }
 
 describe('ListItem', () => {
-	describe('Given none empty todo', () => {
+	describe('Given none empty pet', () => {
 		const wrapper = factory({
-				todo: { id: '1', message: 'Hello', },
+				pet: { id: '1', name: 'Hello', },
 		})
 
 		it('Renders an edit button', () => {
@@ -27,14 +27,14 @@ describe('ListItem', () => {
 			expect(deleteButton.text()).toContain('Delete');
 		})
 
-		it('Emits delete-todo event after click on delete button', () => {
+		it('Emits delete-pet event after click on delete button', () => {
 			const deleteButton = wrapper.find('.deleteButton')
 			deleteButton.trigger('click')
 
-			expect(wrapper.emitted('delete-todo')).toBeTruthy();
+			expect(wrapper.emitted('delete-pet')).toBeTruthy();
 		})
 
-		it('Renders the todo text', () => {
+		it('Renders the pet text', () => {
 			expect(wrapper.text()).toContain('Hello');
 		})
 
@@ -57,7 +57,7 @@ describe('ListItem', () => {
 					expect(input.exists()).toBeTruthy()
 				})
 
-				it('Renders the todo text in the input field', () => {
+				it('Renders the pet text in the input field', () => {
 					const input = wrapper.find('input')
 					expect(input.element.value).toContain('Hello');
 				})
@@ -71,15 +71,15 @@ describe('ListItem', () => {
 					expect(saveButton.text()).toContain('Save');
 				})
 
-				it('Emits save-todo event with correct payload', () => {
+				it('Emits save-pet event with correct payload', () => {
 					const saveButton = wrapper.find('.saveButton')
 
 					saveButton.trigger('click');
-					expect(wrapper.emitted('save-todo')).toBeTruthy;
-					expect(wrapper.emitted('save-todo')[0]).toEqual(['Hello'])
+					expect(wrapper.emitted('save-pet')).toBeTruthy;
+					expect(wrapper.emitted('save-pet')[0]).toEqual(['Hello'])
 				})
 
-				it('Renders the todo text after save button was clicked', () => {
+				it('Renders the pet text after save button was clicked', () => {
 					expect(wrapper.text()).toContain('Hello');
 				})
 			})

@@ -13,4 +13,8 @@ function getSession(){
 	return driver.session();
 }
 
-module.exports = getNeo4jDriver;
+async function closeDriver(){
+	await driver.close()
+}
+
+module.exports = {getNeo4jDriver, closeDriver};
